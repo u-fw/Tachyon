@@ -60,7 +60,7 @@ export default function Home() {
                     handleLoadMore()
                 }
             },
-            { threshold: 1.0 }
+            { threshold: 0.1, rootMargin: '100px' }
         )
 
         if (observerTarget.current) {

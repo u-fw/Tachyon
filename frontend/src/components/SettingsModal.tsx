@@ -21,6 +21,22 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
     } = useSettings()
 
     const [activeTab, setActiveTab] = useState<Tab>(initialTab)
+    const [localItemsPerPage, setLocalItemsPerPage] = useState(itemsPerPage.toString())
+
+    useEffect(() => {
+        setLocalItemsPerPage(itemsPerPage.toString())
+    }, [itemsPerPage])
+
+    // Debounce itemsPerPage update
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const val = parseInt(localItemsPerPage)
+            if (!isNaN(val) && val > 0 && val !== itemsPerPage) {
+                setItemsPerPage(val)
+            }
+        }, 800)
+        return () => clearTimeout(timer)
+    }, [localItemsPerPage, itemsPerPage, setItemsPerPage])
 
     useEffect(() => {
         if (isOpen) {
@@ -165,22 +181,19 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                                 type="number"
                                                 min="1"
                                                 max="100"
-                                                value={itemsPerPage}
-                                                onChange={(e) => {
-                                                    const val = parseInt(e.target.value)
-                                                    if (!isNaN(val) && val > 0) setItemsPerPage(val)
-                                                }}
+                                                value={localItemsPerPage}
+                                                onChange={(e) => setLocalItemsPerPage(e.target.value)}
                                                 className="w-full bg-white/50 dark:bg-black/20 border border-[var(--color-border)] rounded-xl px-4 py-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20 transition-all font-medium text-lg"
                                             />
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-sm pointer-events-none">
-                                                items
+                                                batch size
                                             </div>
                                         </div>
                                         <div className="text-xs text-[var(--color-text-muted)]">
                                             Default: 15
                                         </div>
                                     </div>
-                                    <p className="text-sm text-[var(--color-text-muted)]">Comics per page</p>
+                                    <p className="text-sm text-[var(--color-text-muted)]">Items loaded per batch (Infinite Scroll)</p>
                                 </section>
                             </div>
                         )}

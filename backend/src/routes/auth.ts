@@ -34,22 +34,20 @@ auth.get('/login', async (c) => {
     const codeVerifier = generateCodeVerifier()
     const codeChallenge = generateCodeChallenge(codeVerifier)
 
-    // Store state in cookie for verification
+    // Store state in cookie for verification (stays on API domain only)
     setCookie(c, STATE_COOKIE, state, {
         httpOnly: true,
         secure: IS_PRODUCTION,
         maxAge: 600, // 10 minutes
-        sameSite: COOKIE_DOMAIN ? 'None' : 'Lax',
-        domain: COOKIE_DOMAIN,
+        sameSite: 'Lax',
     })
 
-    // Store PKCE verifier
+    // Store PKCE verifier (stays on API domain only)
     setCookie(c, PKCE_COOKIE, codeVerifier, {
         httpOnly: true,
         secure: IS_PRODUCTION,
         maxAge: 600, // 10 minutes
-        sameSite: COOKIE_DOMAIN ? 'None' : 'Lax',
-        domain: COOKIE_DOMAIN,
+        sameSite: 'Lax',
     })
 
     const params = new URLSearchParams({

@@ -490,9 +490,10 @@ export default function Home() {
             </main>
 
             {/* Back to Top Button */}
+            {/* Back to Top Button */}
             <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className={`fixed bottom-8 right-8 p-3 rounded-full bg-[var(--color-accent)] text-white shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 z-40 ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+                className={`fixed bottom-8 right-8 p-3 rounded-full text-white shadow-2xl ring-2 ring-white dark:ring-white/20 transition-all duration-300 transform hover:scale-110 active:scale-95 z-40 btn-login ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
                     }`}
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

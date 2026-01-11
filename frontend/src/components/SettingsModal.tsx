@@ -75,10 +75,10 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative w-full max-w-3xl h-[600px] bg-[var(--color-bg)] rounded-2xl shadow-2xl ring-1 ring-white/10 overflow-hidden transform transition-all animate-scale-in flex">
+            <div className="relative w-full max-w-3xl h-[600px] glass-card rounded-2xl overflow-hidden transform transition-all animate-scale-in flex">
 
                 {/* Sidebar */}
-                <div className="w-56 flex-shrink-0 bg-[var(--color-bg-card)] border-r border-[var(--color-border)] p-4 flex flex-col gap-2">
+                <div className="w-56 flex-shrink-0 bg-white/50 dark:bg-black/20 border-r border-[var(--color-border)] p-4 flex flex-col gap-2 backdrop-blur-md">
                     <div className="px-2 py-4 mb-2">
                         <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--color-accent)] to-purple-500">
                             {t('settings')}
@@ -89,8 +89,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                                ? 'bg-[var(--color-bg-hover)] text-[var(--color-text)] shadow-sm'
-                                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)]'
+                                ? 'bg-white dark:bg-white/10 text-[var(--color-text)] shadow-sm font-semibold'
+                                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-white/30 dark:hover:bg-white/5'
                                 }`}
                         >
                             <span className={`transition-colors ${activeTab === tab.id ? 'text-[var(--color-accent)]' : ''}`}>
@@ -106,13 +106,13 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg)]/50">
+                <div className="flex-1 flex flex-col min-w-0 bg-white/30 dark:bg-black/10 backdrop-blur-sm">
                     {/* Header */}
-                    <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-md sticky top-0 z-10">
+                    <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between border-b border-[var(--color-border)] bg-white/40 dark:bg-black/20 backdrop-blur-md sticky top-0 z-10">
                         <h3 className="text-lg font-semibold">{tabs.find(t => t.id === activeTab)?.label}</h3>
                         <button
                             onClick={onClose}
-                            className="p-2 -mr-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
+                            className="p-2 -mr-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -131,8 +131,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setLanguage('en')}
                                             className={`p-4 rounded-xl border transition-all text-left ${language === 'en'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -144,8 +144,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setLanguage('zh')}
                                             className={`p-4 rounded-xl border transition-all text-left ${language === 'zh'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -170,7 +170,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                                     const val = parseInt(e.target.value)
                                                     if (!isNaN(val) && val > 0) setItemsPerPage(val)
                                                 }}
-                                                className="w-full bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all"
+                                                className="w-full bg-white/50 dark:bg-black/20 border border-[var(--color-border)] rounded-xl px-4 py-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20 transition-all font-medium text-lg"
                                             />
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-sm pointer-events-none">
                                                 items
@@ -194,8 +194,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setTheme('light')}
                                             className={`p-4 rounded-xl border transition-all text-left group ${theme === 'light'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between mb-3">
@@ -204,7 +204,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                                                     </svg>
                                                 </div>
-                                                {theme === 'light' && <div className="w-2 h-2 rounded-full bg-[var(--color-accent)]" />}
+                                                {theme === 'light' && <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] shadow-[0_0_10px_rgba(139,92,246,0.5)]" />}
                                             </div>
                                             <span className="font-medium">{t('light')}</span>
                                         </button>
@@ -212,8 +212,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setTheme('dark')}
                                             className={`p-4 rounded-xl border transition-all text-left group ${theme === 'dark'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between mb-3">
@@ -222,7 +222,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                                                     </svg>
                                                 </div>
-                                                {theme === 'dark' && <div className="w-2 h-2 rounded-full bg-[var(--color-accent)]" />}
+                                                {theme === 'dark' && <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] shadow-[0_0_10px_rgba(139,92,246,0.5)]" />}
                                             </div>
                                             <span className="font-medium">{t('dark')}</span>
                                         </button>
@@ -236,8 +236,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setViewMode('grid')}
                                             className={`p-4 rounded-xl border transition-all text-left ${viewMode === 'grid'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 mb-2">
@@ -253,8 +253,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                         <button
                                             onClick={() => setViewMode('list')}
                                             className={`p-4 rounded-xl border transition-all text-left ${viewMode === 'list'
-                                                ? 'bg-[var(--color-bg-card)] border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
-                                                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                                                ? 'bg-white dark:bg-white/10 border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] shadow-md'
+                                                : 'bg-white/50 dark:bg-white/5 border-transparent hover:bg-white dark:hover:bg-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 mb-2">
@@ -275,13 +275,13 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                             <div className="space-y-8 animate-fade-in">
                                 <section className="space-y-4">
                                     <h4 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider">{t('preloadPages')}</h4>
-                                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-1 flex">
+                                    <div className="bg-white/50 dark:bg-white/5 border border-[var(--color-border)] rounded-xl p-1 flex">
                                         {[3, 5, 10, 999].map(count => (
                                             <button
                                                 key={count}
                                                 onClick={() => setPreloadCount(count)}
                                                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${preloadCount === count
-                                                    ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text)] shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                                    ? 'bg-white dark:bg-white/10 text-[var(--color-text)] shadow-sm ring-1 ring-black/5 dark:ring-white/10 font-semibold'
                                                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                                                     }`}
                                             >

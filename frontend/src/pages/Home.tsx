@@ -82,7 +82,7 @@ export default function Home() {
             })
 
             setHasMore(pageNum < data.totalPages)
-            setTotalComics(data.total)
+            setTotalComics(data.count)
             setLoading(false)
             setLoadingMore(false)
         } catch (err) {

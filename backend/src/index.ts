@@ -63,9 +63,9 @@ app.use('/api/*', async (c, next) => {
             c.header('Cache-Control', 'public, max-age=31536000, immutable')
         }
     }
-    // Short cache for listings (5 minutes)
-    else if (path === '/api/comics' || path.endsWith('/pages')) {
-        c.header('Cache-Control', 'public, max-age=300')
+    // List & Info cache (1 day for personal use)
+    else if (path === '/api/comics' || path.endsWith('/pages') || path.match(/\/api\/comics\/[^\/]+$/)) {
+        c.header('Cache-Control', 'public, max-age=86400')
     }
 })
 

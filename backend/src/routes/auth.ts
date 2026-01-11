@@ -16,6 +16,10 @@ const SESSION_COOKIE = 'tachyon_session'
 const STATE_COOKIE = 'tachyon_state'
 const PKCE_COOKIE = 'tachyon_pkce'
 
+// Cookie domain for cross-subdomain sharing (e.g., '.log.edu.kg')
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+
 /**
  * GET /auth/login - Redirect to OIDC provider
  */
@@ -33,17 +37,19 @@ auth.get('/login', async (c) => {
     // Store state in cookie for verification
     setCookie(c, STATE_COOKIE, state, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: IS_PRODUCTION,
         maxAge: 600, // 10 minutes
-        sameSite: 'Lax',
+        sameSite: COOKIE_DOMAIN ? 'None' : 'Lax',
+        domain: COOKIE_DOMAIN,
     })
 
     // Store PKCE verifier
     setCookie(c, PKCE_COOKIE, codeVerifier, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: IS_PRODUCTION,
         maxAge: 600, // 10 minutes
-        sameSite: 'Lax',
+        sameSite: COOKIE_DOMAIN ? 'None' : 'Lax',
+        domain: COOKIE_DOMAIN,
     })
 
     const params = new URLSearchParams({
@@ -141,9 +147,10 @@ auth.get('/callback', async (c) => {
 
         setCookie(c, SESSION_COOKIE, sessionToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: IS_PRODUCTION,
             maxAge: 7 * 24 * 60 * 60, // 7 days
-            sameSite: 'Lax',
+            sameSite: COOKIE_DOMAIN ? 'None' : 'Lax',
+            domain: COOKIE_DOMAIN,
         })
 
         // Redirect to home page

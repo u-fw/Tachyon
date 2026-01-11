@@ -190,7 +190,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                             </div>
                                         </div>
                                         <div className="text-xs text-[var(--color-text-muted)]">
-                                            Default: 15
+                                            Default: 36
                                         </div>
                                     </div>
                                     <p className="text-sm text-[var(--color-text-muted)]">Items loaded per batch (Infinite Scroll)</p>

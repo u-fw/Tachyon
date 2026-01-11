@@ -33,7 +33,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // 2. Pagination
     const [itemsPerPage, setItemsPerPageState] = useState(() => {
         const saved = localStorage.getItem('tachyon-per-page')
-        return saved ? parseInt(saved, 10) : 15
+        return saved ? parseInt(saved, 10) : 36
     })
 
     const setItemsPerPage = (count: number) => {

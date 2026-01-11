@@ -3,9 +3,10 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { getCookie } from 'hono/cookie'
 import { serve } from '@hono/node-server'
-import { comicsRouter } from './routes/comics'
-import { authRouter } from './routes/auth'
-import { verifySessionToken, getOIDCConfig } from './utils/auth'
+import { comicsRouter } from './routes/comics.js'
+import { authRouter } from './routes/auth.js'
+import { verifySessionToken, getOIDCConfig } from './utils/auth.js'
+
 
 const app = new Hono()
 

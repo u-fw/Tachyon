@@ -8,7 +8,7 @@ import {
     getComicPages,
     decodeId,
     getFileStats
-} from '../utils/scanner'
+} from '../utils/scanner.js'
 
 const comics = new Hono()
 

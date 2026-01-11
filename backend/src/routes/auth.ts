@@ -8,7 +8,7 @@ import {
     generateCodeVerifier,
     generateCodeChallenge,
     type SessionData
-} from '../utils/auth'
+} from '../utils/auth.js'
 
 const auth = new Hono()
 

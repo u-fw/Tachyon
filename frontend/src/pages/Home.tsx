@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { fetchComics, getCoverUrl, type ComicInfo } from '../lib/api'
 import { useTheme } from '../contexts/ThemeContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -25,11 +25,13 @@ export default function Home() {
     // Pagination State
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(true)
+    const [totalComics, setTotalComics] = useState(0)
 
     // UI State
     const [search, setSearch] = useState('')
     const [sort, setSort] = useState<SortOption>('name')
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [showBackToTop, setShowBackToTop] = useState(false)
 
     // Reset pagination when settings change
     useEffect(() => {
@@ -38,6 +40,35 @@ export default function Home() {
         setLoading(true)
         loadComics(1, true)
     }, [itemsPerPage])
+
+    // Back to top visibility
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowBackToTop(window.scrollY > 500)
+        }
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+
+    // Intersection Observer for Infinite Scroll
+    const observerTarget = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !search) {
+                    handleLoadMore()
+                }
+            },
+            { threshold: 1.0 }
+        )
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current)
+        }
+
+        return () => observer.disconnect()
+    }, [hasMore, loading, loadingMore, search])
 
     const loadComics = async (pageNum: number, isReset = false) => {
         try {
@@ -51,6 +82,7 @@ export default function Home() {
             })
 
             setHasMore(pageNum < data.totalPages)
+            setTotalComics(data.total)
             setLoading(false)
             setLoadingMore(false)
         } catch (err) {
@@ -348,7 +380,7 @@ export default function Home() {
 
                     {/* Counter */}
                     <span className="text-sm text-[var(--color-text-muted)] font-medium">
-                        {t('comicsCount', { count: filteredComics.length })}
+                        {t('comicsCount', { count: search ? filteredComics.length : totalComics })}
                     </span>
                 </section>
 
@@ -445,22 +477,28 @@ export default function Home() {
                     </section>
                 )}
 
-                {/* Load More Button */}
+                {/* Infinite Scroll Sentinel */}
                 {!loading && !error && hasMore && !search && (
-                    <div className="flex justify-center mt-10 mb-6">
-                        <button
-                            onClick={handleLoadMore}
-                            disabled={loadingMore}
-                            className="bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text)] px-8 py-3 rounded-full font-medium transition-all shadow-sm flex items-center gap-2"
-                        >
-                            {loadingMore && (
-                                <div className="w-4 h-4 border-2 border-[var(--color-text)] border-t-transparent rounded-full animate-spin" />
-                            )}
-                            {loadingMore ? 'Loading more...' : 'Load Mode Comics'}
-                        </button>
+                    <div ref={observerTarget} className="h-24 flex items-center justify-center p-4">
+                        {loadingMore && (
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-8 h-8 ease-linear rounded-full border-2 border-t-2 border-[var(--color-text-muted)] border-t-[var(--color-accent)] animate-spin" />
+                            </div>
+                        )}
                     </div>
                 )}
             </main>
+
+            {/* Back to Top Button */}
+            <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={`fixed bottom-8 right-8 p-3 rounded-full bg-[var(--color-accent)] text-white shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 z-40 ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+                    }`}
+            >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+            </button>
 
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </div>

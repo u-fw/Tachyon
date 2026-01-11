@@ -9,6 +9,7 @@ export interface ComicInfo {
 
 export interface ComicsResponse {
     count: number
+    total: number
     comics: ComicInfo[]
     page: number
     totalPages: number

@@ -52,7 +52,7 @@ app.use('/api/comics/*', async (c, next) => {
     return next()
 })
 
-// Cache headers middleware
+// Cache headers middleware (CF Cache Rules handle edge caching)
 app.use('/api/*', async (c, next) => {
     await next()
     const path = c.req.path
@@ -61,13 +61,11 @@ app.use('/api/*', async (c, next) => {
     if (path.includes('/cover') || path.match(/\/pages\/\d+/)) {
         if (!c.res.headers.has('Cache-Control')) {
             c.header('Cache-Control', 'public, max-age=31536000, immutable')
-            c.header('CDN-Cache-Control', 'public, max-age=31536000')  // For Cloudflare edge
         }
     }
-    // Short cache for listings (5 minutes browser, 10 minutes CDN)
+    // Short cache for listings (5 minutes)
     else if (path === '/api/comics' || path.endsWith('/pages')) {
         c.header('Cache-Control', 'public, max-age=300')
-        c.header('CDN-Cache-Control', 'public, max-age=600')  // For Cloudflare edge
     }
 })
 

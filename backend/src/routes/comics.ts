@@ -1,15 +1,24 @@
 import { Hono } from 'hono'
-import { createReadStream, statSync } from 'fs'
-import { getCookie } from 'hono/cookie' // Added
-import { verifySessionToken, getOIDCConfig } from '../utils/auth.js' // Added
+import { createReadStream } from 'fs'
+import { getCookie } from 'hono/cookie'
+import {
+    verifySessionToken,
+    getOIDCConfig,
+    generateSignedUrl,
+    generateSignedCoverUrl,
+    verifySignedUrl,
+    verifySignedCoverUrl
+} from '../utils/auth.js'
 import { join, resolve, extname } from 'path'
 import { Readable } from 'stream'
 import mime from 'mime-types'
 import {
-    scanComics,
+    getComics,
+    getComic,
     getComicPages,
     decodeId,
-    getFileStats
+    getFileStats,
+    type ComicInfo
 } from '../utils/scanner.js'
 
 const comics = new Hono()
@@ -25,87 +34,61 @@ comics.use('*', async (c, next) => {
         return c.json({ error: 'Server Configuration Error: Auth Missing' }, 500)
     }
 
+    // 1. Check for valid Session Cookie first
     const sessionToken = getCookie(c, 'tachyon_session')
-    if (!sessionToken) {
-        return c.json({ error: 'Unauthorized: Missing Session Cookie' }, 401)
+    if (sessionToken) {
+        const session = verifySessionToken(sessionToken)
+        if (session) {
+            // Valid session, allow access
+            return next()
+        }
     }
 
-    const session = verifySessionToken(sessionToken)
-    if (!session) {
-        return c.json({ error: 'Unauthorized: Invalid or Expired Session' }, 401)
+    // 2. If no session, check for Valid Signature (for images/covers)
+    const url = new URL(c.req.url)
+    const expires = url.searchParams.get('expires')
+    const sig = url.searchParams.get('sig')
+
+    // Only allow signature bypass for specific image endpoints, not the list API
+    if (c.req.path.includes('/pages/') || c.req.path.includes('/cover')) {
+        if (expires && sig) {
+            // Validate Signature in the specific route handler?
+            // Actually, best to validate here or let the handler do it.
+            // Let's attach a flag so handler knows it's via Signature?
+            // Or just proceed and let handler verify.
+            // PROBLEM: If we proceed here without throwing 401, we might allow access to other things?
+            // "comics.use('*')" matches everything.
+            // Let's return next() but ensure the handlers call verifySignedUrl if no session.
+
+            // To be safe: Force verification NOW if it's an image request.
+            // Parsing params from path is tricky here in middleware (regex?).
+            // Simplified: Just pass through. The Handlers MUST check for Session OR Signature.
+            return next()
+        }
     }
 
-    // Attach session to context if needed, or just proceed
-    return next()
+    return c.json({ error: 'Unauthorized: Missing Session or Signature' }, 401)
 })
 
 const COMICS_DIR = process.env.COMICS_DIR || '/opt/comics'
 
-// Simple in-memory cache
-let comicsCache: {
-    data: any[]
-    lastUpdated: number
-} | null = null
-
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
-
 /**
- * GET /comics - List all comics
- * Cache-friendly: returns stable JSON with comic IDs
- * Supports ?refresh=true to force cache update
+ * GET /comics - List all comics (Paginated from Memory Cache)
  */
 comics.get('/comics', (c) => {
-    const forceRefresh = c.req.query('refresh') === 'true'
-    const now = Date.now()
-
-    // Use cache if valid and not forcing refresh
-    if (!forceRefresh && comicsCache && (now - comicsCache.lastUpdated < CACHE_DURATION)) {
-        // Apply pagination on cached data
-        const comicsList = comicsCache.data
-        const page = Math.max(1, parseInt(c.req.query('page') || '1'))
-        const limit = Math.max(1, parseInt(c.req.query('limit') || '2000'))
-
-        const startIndex = (page - 1) * limit
-        const endIndex = startIndex + limit
-        const paginatedComics = comicsList.slice(startIndex, endIndex)
-
-        // Add X-Cache header to indicate HIT
-        c.header('X-Server-Cache', 'HIT')
-
-        return c.json({
-            count: comicsList.length,
-            comics: paginatedComics,
-            page,
-            totalPages: Math.ceil(comicsList.length / limit)
-        })
-    }
-
-    // Cache MISS or refresh requested
-    console.log('[Comics] Scanning directory...')
-    const comicsList = scanComics(COMICS_DIR)
-
-    // Update cache
-    comicsCache = {
-        data: comicsList,
-        lastUpdated: now
-    }
-
-    // Pagination
     const page = Math.max(1, parseInt(c.req.query('page') || '1'))
-    const limit = Math.max(1, parseInt(c.req.query('limit') || '2000'))
+    const limit = Math.max(1, parseInt(c.req.query('limit') || '36')) // Default 36
 
-    const startIndex = (page - 1) * limit
-    const endIndex = startIndex + limit
-    const paginatedComics = comicsList.slice(startIndex, endIndex)
+    const { comics, total } = getComics(page, limit)
 
-    // Add X-Cache header to indicate MISS
-    c.header('X-Server-Cache', 'MISS')
+    // Log performance (debug)
+    // console.log(`[API] Serving comics page ${page} (${comics.length} items)`)
 
     return c.json({
-        count: comicsList.length,
-        comics: paginatedComics,
-        page,
-        totalPages: Math.ceil(comicsList.length / limit)
+        count: total,
+        comics: comics,
+        page: page,
+        totalPages: Math.ceil(total / limit)
     })
 })
 
@@ -114,125 +97,148 @@ comics.get('/comics', (c) => {
  */
 comics.get('/comics/:id', (c) => {
     const id = c.req.param('id')
-    const folderName = decodeId(id)
-    const folderPath = resolve(join(COMICS_DIR, folderName))
+    const comic = getComic(id)
 
-    // Security: prevent path traversal
-    if (!folderPath.startsWith(resolve(COMICS_DIR))) {
-        return c.json({ error: 'Invalid path' }, 403)
-    }
-
-    const pages = getComicPages(folderPath)
-    if (pages.length === 0) {
+    if (!comic) {
         return c.json({ error: 'Comic not found' }, 404)
     }
 
-    return c.json({
-        id,
-        name: folderName,
-        pageCount: pages.length,
-    })
+    return c.json(comic)
 })
 
 /**
  * GET /comics/:id/cover - Get comic cover (first image)
- * Cache-friendly: stable URL, long cache time
+ * Requires: Session OR Valid Signature
  */
 comics.get('/comics/:id/cover', async (c) => {
     const id = c.req.param('id')
-    const folderName = decodeId(id)
+    const sessionToken = getCookie(c, 'tachyon_session')
+    const hasSession = sessionToken && verifySessionToken(sessionToken)
+
+    // Check Signature if no session
+    if (!hasSession) {
+        const expires = c.req.query('expires')
+        const sig = c.req.query('sig')
+        if (!expires || !sig || !verifySignedCoverUrl(id, expires, sig)) {
+            return c.json({ error: 'Unauthorized Identifier' }, 403)
+        }
+    }
+
+    // Resolve File
+    const comic = getComic(id)
+    if (!comic) {
+        // Fallback: decode ID directly if cache missed (e.g. restart) but ID is valid base64
+        // But for security, consistent with cache is better. 
+        // Let's try to find path from ID via cache.
+        return c.json({ error: 'Comic not found' }, 404)
+    }
+
+    const folderName = comic.name // OR decodeId(id)
     const folderPath = resolve(join(COMICS_DIR, folderName))
 
-    if (!folderPath.startsWith(resolve(COMICS_DIR))) {
-        return c.json({ error: 'Invalid path' }, 403)
-    }
+    // Security check
+    if (!folderPath.startsWith(resolve(COMICS_DIR))) return c.json({ error: 'Invalid path' }, 403)
 
     const pages = getComicPages(folderPath)
-    if (pages.length === 0) {
-        return c.json({ error: 'No cover found' }, 404)
-    }
+    if (pages.length === 0) return c.json({ error: 'No cover found' }, 404)
 
-    // Use relativePath for nested folder support
     const coverPath = join(folderPath, pages[0].relativePath)
     return streamImage(c, coverPath)
 })
 
 /**
- * GET /comics/:id/pages - List all pages in a comic
+ * GET /comics/:id/pages - List all pages (Returns Signed URLs)
+ * Requires: Session
  */
 comics.get('/comics/:id/pages', (c) => {
-    const id = c.req.param('id')
-    const folderName = decodeId(id)
-    const folderPath = resolve(join(COMICS_DIR, folderName))
+    // This endpoint returns instructions, requires Session.
+    // Middleware already checked for Session or Sig. 
+    // But since this isn't an image, we enforce Session strictly?
+    // Actually, middleware allows pass if query params exist. 
+    // But this endpoint typically is called by Frontend with Cookie.
 
-    if (!folderPath.startsWith(resolve(COMICS_DIR))) {
-        return c.json({ error: 'Invalid path' }, 403)
+    // Strict check: List of pages is privileged info.
+    const sessionToken = getCookie(c, 'tachyon_session')
+    if (!sessionToken || !verifySessionToken(sessionToken)) {
+        return c.json({ error: 'Unauthorized' }, 401)
     }
 
+    const id = c.req.param('id')
+    const comic = getComic(id)
+    if (!comic) return c.json({ error: 'Comic not found' }, 404)
+
+    const folderName = comic.name
+    const folderPath = resolve(join(COMICS_DIR, folderName))
+
+    // Get actual pages logic
     const pages = getComicPages(folderPath)
+
+    // Generate Signed URLs for each page
+    // Default expiration: 365 days (from auth.ts default)
+    const signedPages = pages.map(p => ({
+        index: p.index,
+        url: generateSignedUrl(id, p.index) // Auto-signed
+    }))
+
     return c.json({
         id,
-        name: folderName,
+        name: comic.name,
         pageCount: pages.length,
-        pages: pages.map(p => ({
-            index: p.index,
-            url: `/api/comics/${id}/pages/${p.index}`,
-        })),
+        pages: signedPages
     })
 })
 
 /**
  * GET /comics/:id/pages/:page - Get single page image
- * Cache-friendly: stable URL with page index
- * Supports: ETag, Range requests
+ * Requires: Session OR Valid Signature
  */
 comics.get('/comics/:id/pages/:page', async (c) => {
     const id = c.req.param('id')
     const pageIndex = parseInt(c.req.param('page'), 10)
 
-    if (isNaN(pageIndex) || pageIndex < 0) {
-        return c.json({ error: 'Invalid page index' }, 400)
+    if (isNaN(pageIndex) || pageIndex < 0) return c.json({ error: 'Invalid page index' }, 400)
+
+    // Auth Check
+    const sessionToken = getCookie(c, 'tachyon_session')
+    const hasSession = sessionToken && verifySessionToken(sessionToken)
+
+    if (!hasSession) {
+        const expires = c.req.query('expires')
+        const sig = c.req.query('sig')
+        if (!expires || !sig || !verifySignedUrl(id, pageIndex, expires, sig)) {
+            return c.json({ error: 'Unauthorized Identifier' }, 403)
+        }
     }
 
+    // Resolve ID
+    // We can decode ID directly to avoid Cache lookup if we want to support "Permalink even if Cache is rebuilding"
+    // decodeId is safe.
     const folderName = decodeId(id)
     const folderPath = resolve(join(COMICS_DIR, folderName))
 
-    if (!folderPath.startsWith(resolve(COMICS_DIR))) {
-        return c.json({ error: 'Invalid path' }, 403)
-    }
+    if (!folderPath.startsWith(resolve(COMICS_DIR))) return c.json({ error: 'Invalid path' }, 403)
 
     const pages = getComicPages(folderPath)
-    if (pageIndex >= pages.length) {
-        return c.json({ error: 'Page not found' }, 404)
-    }
+    if (pageIndex >= pages.length) return c.json({ error: 'Page not found' }, 404)
 
-    // Use relativePath for nested folder support
     const imagePath = join(folderPath, pages[pageIndex].relativePath)
     return streamImage(c, imagePath)
 })
 
 /**
- * Stream image with proper headers for caching
+ * Stream image
  */
 async function streamImage(c: any, imagePath: string): Promise<Response> {
     const stats = getFileStats(imagePath)
-    if (!stats) {
-        return c.json({ error: 'File not found' }, 404)
-    }
+    if (!stats) return c.json({ error: 'File not found' }, 404)
 
     const ext = extname(imagePath).toLowerCase()
     const mimeType = mime.lookup(ext) || 'application/octet-stream'
-
-    // Generate ETag based on path, size, and mtime
     const etag = `"${Buffer.from(`${imagePath}-${stats.size}-${stats.mtime}`).toString('base64url').slice(0, 27)}"`
 
-    // Check If-None-Match for 304 response
     const ifNoneMatch = c.req.header('If-None-Match')
-    if (ifNoneMatch === etag) {
-        return new Response(null, { status: 304 })
-    }
+    if (ifNoneMatch === etag) return new Response(null, { status: 304 })
 
-    // Stream the file
     const stream = createReadStream(imagePath)
     const webStream = Readable.toWeb(stream) as ReadableStream
 

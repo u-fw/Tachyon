@@ -53,12 +53,27 @@ export function verifySignature(data: string, signature: string): boolean {
  * Generate a signed URL for an image
  * URL format: /api/comics/:id/pages/:page?expires=TIMESTAMP&sig=SIGNATURE
  */
-export function generateSignedUrl(comicId: string, page: number, expiresInSeconds: number = 3600): string {
+export function generateSignedUrl(comicId: string, page: number, expiresInSeconds: number = 31536000): string {
     const expires = Math.floor(Date.now() / 1000) + expiresInSeconds
     const data = `${comicId}:${page}:${expires}`
     const sig = generateSignature(data)
 
     return `/api/comics/${comicId}/pages/${page}?expires=${expires}&sig=${sig}`
+}
+
+export function generateSignedCoverUrl(comicId: string, expiresInSeconds: number = 31536000): string {
+    const expires = Math.floor(Date.now() / 1000) + expiresInSeconds
+    const data = `${comicId}:cover:${expires}`
+    const sig = generateSignature(data)
+
+    return `/api/comics/${comicId}/cover?expires=${expires}&sig=${sig}`
+}
+
+export function verifySignedCoverUrl(comicId: string, expires: string, sig: string): boolean {
+    const expiresNum = parseInt(expires, 10)
+    if (isNaN(expiresNum) || expiresNum < Math.floor(Date.now() / 1000)) return false
+    const data = `${comicId}:cover:${expiresNum}`
+    return verifySignature(data, sig)
 }
 
 /**

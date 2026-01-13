@@ -70,9 +70,15 @@ app.get('/api/config', (c) => c.json({
     authEnabled: isAuthEnabled(),
 }))
 
+import { initScanner } from './utils/scanner.js'
+
 const port = Number(process.env.PORT) || 3001
 console.log(`🚀 Tachyon API running on http://localhost:${port}`)
 console.log(`🔐 Auth: ${isAuthEnabled() ? 'Enabled' : 'Disabled (set OIDC_CLIENT_ID to enable)'}`)
+
+// Initialize Comic Scanner (In-Memory Cache)
+const COMICS_DIR = process.env.COMICS_DIR || '/opt/comics'
+initScanner(COMICS_DIR)
 
 serve({
     fetch: app.fetch,

@@ -21,11 +21,6 @@ comics.use('*', async (c, next) => {
     const isAuthEnabled = !!config.clientId
 
     if (!isAuthEnabled) {
-        // [Security] Strict Mode: Block access if Auth is not configured.
-        // Uncomment the lines below ONLY if you intentionally want a public server.
-        // console.warn('[Security] Auth disabled (missing OIDC_CLIENT_ID), allowing public access.')
-        // return next()
-
         console.error('[Security] CRITICAL: OIDC_CLIENT_ID is missing. Refusing to start in insecure mode.')
         return c.json({ error: 'Server Configuration Error: Auth Missing' }, 500)
     }

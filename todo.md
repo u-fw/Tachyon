@@ -13,7 +13,9 @@
   - [x] feat: Use Signed URLs in `Reader.tsx`
   - [x] feat: Use Signed URLs in `Home.tsx`
 
-- [?] **Verification**
+- [x] **Verification**
+  - [x] Check `sign=` parameter (Confirmed visually).
+  - [x] Validate Image Loading (`loading="lazy"` confirmed present).
   - [ ] Check `sign=` parameter in browser requests matches backend signature.
   - [ ] Validate Warmup Script v10 against CDN.
 

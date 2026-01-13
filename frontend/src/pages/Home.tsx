@@ -76,7 +76,6 @@ export default function Home() {
     const loadComics = async (pageNum: number, isReset = false) => {
         try {
             const data = await fetchComics(pageNum, itemsPerPage)
-            console.log('[DEBUG] Home Comics Response:', data)
 
             setComics(prev => {
                 if (isReset) return data.comics
